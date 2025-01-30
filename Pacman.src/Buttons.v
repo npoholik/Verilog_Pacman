@@ -33,7 +33,7 @@ module Buttons(
     dff d1(slow_clk, Q0, Q1);
     dff d2(slow_clk, Q1, Q2);
     
-    assign btn_out = ~Q1 & Q2;
+    assign btn_out = (~Q1 & Q2) || (Q1 & Q2);
 endmodule
 
 
