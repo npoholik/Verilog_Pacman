@@ -60,3 +60,14 @@ set_property PACKAGE_PIN T2 [get_ports {switch[10]}]
 set_property PACKAGE_PIN R3 [get_ports {switch[11]}]					
 	set_property IOSTANDARD LVCMOS33 [get_ports {switch[11]}]
 
+
+
+## Buttons 
+	set_property PACKAGE_PIN T18 [get_ports SW_up]						
+		set_property IOSTANDARD LVCMOS33 [get_ports SW_up]
+	set_property PACKAGE_PIN W19 [get_ports SW_left]						
+		set_property IOSTANDARD LVCMOS33 [get_ports SW_left]
+	set_property PACKAGE_PIN T17 [get_ports SW_right]						
+		set_property IOSTANDARD LVCMOS33 [get_ports SW_right]
+	set_property PACKAGE_PIN U17 [get_ports SW_down]						
+		set_property IOSTANDARD LVCMOS33 [get_ports SW_down]
