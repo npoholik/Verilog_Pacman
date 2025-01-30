@@ -1,28 +1,25 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company:
-// Engineer:
+// Engineer: Nikolas Poholik
 //
 // Create Date: 01/28/2025 04:04:18 PM
-// Design Name:
+// Design Name: Pacman
 // Module Name: VGA
-// Project Name:
-// Target Devices:
-// Tool Versions:
-// Description:
+// Project Name: Verilog Pacman
+// Target Devices: Basys 3 FPGA Board
+// Tool Versions: Vivado 2024.1
+// Description: This project aims to recreate a simple version of pacman. Aspects of the game will continue to be built incrementally. 
 //
-// Dependencies:
 //
 // Revision:
 // Revision 0.01 - File Created
-// Additional Comments:
-//
 //////////////////////////////////////////////////////////////////////////////////
 `define SCALE 4
 
 module VGA(
 	input clk,
 	input [11:0] switch,
+	input [3:0] cursor,			// Cursor controls pacman (0 = right, 1 = left, 2 = up, 3 = down)
 	output reg [3:0] vgaRed,
 	output reg [3:0] vgaBlue,
 	output reg [3:0] vgaGreen,
@@ -36,7 +33,7 @@ module VGA(
 	reg [3:0] iSprite, jSprite = 0;  // keep track of sprite color position
 	reg [9:0] pacX, pacY = 0;    	// keep track of sprite position
 	reg [1:0] frameSelect;  	// Select the current frame to draw
-
+	reg [1:0] direction; 		// Track the current direction of pacman in regards to 
     
 	// Reserve enough space for a 640x480 resolution with enough space for front -> sync -> back
 	reg [9:0] xPix = 0;
@@ -61,42 +58,14 @@ module VGA(
 	always @(posedge clk_div) begin
     	if(~(xPix > 639 || yPix > 479)) begin
         	// Check for the bounds of pacman within the drawing of the screen (scaled up by 4)
-        	if ((xPix >= pacX && xPix <= pacX + 16 * 4) && (yPix >= pacY && yPix <= pacY + 16 * 4)) begin
-            	if (xPix % 4 == 0) begin
-                	iSprite = (15 - ((yPix - pacY) / 4));
-                	jSprite = (15 - ((xPix - pacX) / 4));
-            	end
-       	 
-       	 
-        	// Check for the bounds of pac man (we will scale him up by 4 x )
-        	//if((xPix > 0) && (xPix < 14 * 4) ) begin
-            	//if((yPix > 0) && (yPix < 13 * 4)) begin
-               	 
-               	 
-               	 
-                	//vgaRed <= spriteRGB;
-                	//vgaBlue <= 'hff;
-                	//vgaGreen <= 'h00;
-                	/*
-                	// Now we know that the screen is within the bounds, lets start pulling RGB information from sprite
-                	// Step one: check repeatX to see if we need to move onto next col
-                	if(repeatX < 4)
-                    	repeatX = repeatX + 1;
-                   	 
-                	else begin
-                    	repeatX = 0;
-                    	repeatY = repeatY + 1;
-                   	 
-                    	spriteX <= spriteX + 1;
-                    	if (repeatY >= 4) begin
-                        	repeatY = 0;
-                        	spriteY <= spriteY + 1;
-                    	end
-                    	vgaRed <= 'hff;
-                    	vgaBlue <= 'hff;
-                    	vgaGreen <= 'h00;
-                    	*/
-               	// end
+        	if ((xPix >= pacX && xPix <= pacX + 16 * SCALE) && (yPix >= pacY && yPix <= pacY + 16 * SCALE)) begin
+            	if (xPix % SCALE == 0) begin	// This mod 4 will determine which sprite color data to actually use
+					// This will draw pacman facing right 
+                	iSprite = (15 - ((yPix - pacY) / SCALE));
+                	jSprite = (15 - ((xPix - pacX) / SCALE));
+				end
+
+				// Only draw non-transparent aspects of the sprite
             	if(~(spriteRGB == 0)) begin
                 	vgaRed = spriteRGB[11:8];
                 	vgaGreen = spriteRGB[7:4];
@@ -106,6 +75,7 @@ module VGA(
                 	vgaBlue = switch[7:4];
                 	vgaGreen = switch[3:0];
             	end
+			// If not within Pacman's bounds, simply draw the background
         	end else begin
             	vgaRed = switch[11:8];
             	vgaBlue = switch[7:4];
@@ -131,7 +101,7 @@ module VGA(
     	end
 	end
     
-	// Set up hsync and vsync
+	// Set up hsync and vsync (keeping in mind the porch time, sync time, and back time)
 	// hsync will be set low > 640 + 16 and < 800 - 48
 	// vsync will be set low > 480 + 10 and < 525 - 33
 	always @(posedge clk_div) begin
@@ -139,21 +109,19 @@ module VGA(
         	Hsync <= 0;
     	else
         	Hsync <= 1;
-       	 
     	if ((yPix > 480 + 10) && (yPix < 525 - 33))
         	Vsync <= 0;
     	else
         	Vsync <= 1;
 	end
     
-    
 
-    
+
 	reg [4:0] frameUpdate;
     
 	always @(yPix) begin
     	if (yPix == 0) begin
-         	if (frameUpdate == 20) begin
+         	if (frameUpdate == 20) begin		// This should be 3 times a second
             	frameSelect = frameSelect + 1;
             	frameUpdate = 0;
          	end
