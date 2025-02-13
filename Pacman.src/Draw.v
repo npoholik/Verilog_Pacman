@@ -3,13 +3,14 @@
 // Engineer: Nikolas Poholik
 //
 // Create Date: 01/28/2025 04:04:18 PM
-// Design Name: Pacman
-// Module Name: VGA
+// Design Name: Verilog Pacman
+// Module Name: Draw
 // Project Name: Verilog Pacman
 // Target Devices: Basys 3 FPGA Board
 // Tool Versions: Vivado 2024.1
 // Description: This project aims to recreate a simple version of pacman. Aspects of the game will continue to be built incrementally. 
-//
+// 				The goal of this module is to serve as the TOP LEVEL DRAW where IO is processed
+//				The inputs will be handled by certain sub modules accordingly 
 //
 // Revision:
 // Revision 0.01 - File Created
