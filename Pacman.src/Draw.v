@@ -40,6 +40,7 @@ module VGA #(parameter SCALE = 2) (
 	reg [9:0] xPix = 0;
 	reg [9:0] yPix = 0;
     reg[3:0] frameUpdate;
+    reg[3:0] moveUpdate;
     
 	Sprite sprite_inst(.x (iSprite),.y (jSprite), .select (frameSelect), .rgb (spriteRGB));
     Buttons btn_up(SW_up, clk, cursor[0]);
@@ -57,10 +58,11 @@ module VGA #(parameter SCALE = 2) (
     	end else
         	counter <= counter + 1;
 	end
-    
+
+    // Direction chooser 
     always @(posedge clk_div) begin
         if(cursor[0]) direction = 0;
-        else if (cursor[1]) direction = 2;
+        else if (cursor[1]) direction = 2; 
         else if (cursor[2]) direction = 1;
         else if (cursor[3]) direction = 3;
     end 
@@ -76,15 +78,18 @@ module VGA #(parameter SCALE = 2) (
                 	   iSprite = (15 - ((yPix - pacY) / SCALE));
                 	   jSprite = (15 - ((xPix - pacX) / SCALE));
                 	// this will draw pacman facing right 
-                	end else if (direction == 1) begin 
+                	end
+                	if (direction == 1) begin 
                 	   iSprite = ((yPix-pacY) / SCALE);
                 	   jSprite = ((xPix - pacX) / SCALE);
                 	// this will draw pacman facing up
-                	end else if (direction == 0) begin 
+                	end
+                	if (direction == 0) begin 
                 	   iSprite = (15 - ((xPix - pacX) / SCALE));
                 	   jSprite = (15 - ((yPix - pacY) / SCALE));
                 	// this will draw pacman facing down
-                	end else if (direction == 3) begin 
+                	end
+                	if (direction == 3) begin 
                 	   iSprite = ((xPix - pacX) / SCALE); 
                 	   jSprite = ((yPix - pacY) / SCALE); 
                 	end 
@@ -140,21 +145,37 @@ module VGA #(parameter SCALE = 2) (
         	Vsync <= 1;
 	end
     
-    
-    reg [4:0] directionUpdate;
-    
+    // This will handle movement + frame information 
     always @(posedge clk_div) begin 
         if (yPix == 0 && xPix == 0) begin
              if (frameUpdate == 5) begin
+                // Update sprites 
                 frameSelect = frameSelect + 1;
+
                 frameUpdate = 0;
              end
-             //if (directionUpdate == 30) begin
-                //direction = direction + 1;
-             //   directionUpdate = 0;
-             //end
+             /*
+             // Update movement 
+             if (pacX > 0) begin 
+                if (direction == 2) pacX = pacX - 2; // this will move pacman left
+             end
+             if (pacX < 640 - 16 * SCALE) begin
+                if (direction == 1) pacX = pacX + 2; // this will move pacman right 
+             end
+             
+             // this will move pacman up
+             if (pacY > 0 - 16 * SCALE) begin  
+                if (direction == 0) pacY = pacY - 2;
+             end else begin 
+                pacY = 480 + SCALE * 16
+             end 
+             
+             if (pacY < 480 + 16 * SCALE) begin
+                if (direction == 3) pacY = pacY + 2; // this will move pacman down
+             end else 
+                pacY = 0 - 16 * SCALE
              frameUpdate = frameUpdate + 1;
-             //directionUpdate = directionUpdate + 1;
+             */
         end
     end
     
