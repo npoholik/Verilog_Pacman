@@ -16,7 +16,7 @@
 // Revision 0.01 - File Created
 //////////////////////////////////////////////////////////////////////////////////
 
-module VGA #(parameter SCALE = 2) (
+module Draw #(parameter SCALE = 2) (
 	input clk,
 	input [11:0] switch,
 	input SW_up, SW_left, SW_right, SW_down,
@@ -31,18 +31,23 @@ module VGA #(parameter SCALE = 2) (
     
 	wire [11:0] spriteRGB;   	// Keep track of sprite rgb
 	reg [3:0] iSprite, jSprite = 0;  // keep track of sprite color position
-	reg [9:0] pacX, pacY = 0;    	// keep track of sprite position
+	reg signed [10:0] pacX, pacY = 0;    	// keep track of sprite position
 	reg [1:0] frameSelect;  	// Select the current frame to draw
 	reg [1:0] direction; 		// Track the current direction of pacman 
     reg [3:0] cursor;
-    
+
+    parameter UP = 0,
+              DOWN = 3,
+              LEFT = 2,
+              RIGHT = 1;
+        
 	// Reserve enough space for a 640x480 resolution with enough space for front -> sync -> back
-	reg [9:0] xPix = 0;
-	reg [9:0] yPix = 0;
+	reg signed [10:0] xPix = 0;
+	reg signed [10:0] yPix = 0;
     reg[3:0] frameUpdate;
-    reg[3:0] moveUpdate;
     
 	Sprite sprite_inst(.x (iSprite),.y (jSprite), .select (frameSelect), .rgb (spriteRGB));
+    
     Buttons btn_up(SW_up, clk, cursor[0]);
     Buttons btn_left(SW_left, clk, cursor[1]);
     Buttons btn_right(SW_right, clk, cursor[2]);
@@ -61,18 +66,18 @@ module VGA #(parameter SCALE = 2) (
 
     // Direction chooser 
     always @(posedge clk_div) begin
-        if(cursor[0]) direction = 0;
-        else if (cursor[1]) direction = 2; 
-        else if (cursor[2]) direction = 1;
-        else if (cursor[3]) direction = 3;
+        if(cursor[0]) direction = UP;
+        else if (cursor[1]) direction = LEFT; 
+        else if (cursor[2]) direction = RIGHT;
+        else if (cursor[3]) direction = DOWN;
     end 
     
 	// color chooser
 	always @(posedge clk_div) begin
     	if(~(xPix > 639 || yPix > 479)) begin
-        	// Check for the bounds of pacman within the drawing of the screen (scaled up by 4)
+        	// Check for the bounds of pacman within the drawing of the screen (scaled up by n)
         	if ((xPix >= pacX && xPix <= pacX + 16 * SCALE) && (yPix >= pacY && yPix <= pacY + 16 * SCALE)) begin
-            	if (xPix % SCALE == 0) begin	// This mod 4 will determine which sprite color data to actually use
+            	if (xPix % SCALE == 0) begin	// This mod by the scale will determine which sprite color data to actually use
 					// This will draw pacman facing left
 					if (direction == 2) begin 
                 	   iSprite = (15 - ((yPix - pacY) / SCALE));
@@ -145,37 +150,48 @@ module VGA #(parameter SCALE = 2) (
         	Vsync <= 1;
 	end
     
+    
     // This will handle movement + frame information 
     always @(posedge clk_div) begin 
         if (yPix == 0 && xPix == 0) begin
              if (frameUpdate == 5) begin
                 // Update sprites 
-                frameSelect = frameSelect + 1;
-
-                frameUpdate = 0;
-             end
-             /*
-             // Update movement 
-             if (pacX > 0) begin 
-                if (direction == 2) pacX = pacX - 2; // this will move pacman left
-             end
-             if (pacX < 640 - 16 * SCALE) begin
-                if (direction == 1) pacX = pacX + 2; // this will move pacman right 
+                frameSelect <= frameSelect + 1;
+                frameUpdate <= 0;
              end
              
-             // this will move pacman up
-             if (pacY > 0 - 16 * SCALE) begin  
-                if (direction == 0) pacY = pacY - 2;
-             end else begin 
-                pacY = 480 + SCALE * 16
-             end 
+            frameUpdate <= frameUpdate + 1; 
+            
+              
+            if (direction == UP) begin
+                if (pacY > 0 - 16 * SCALE) begin
+                    pacY = pacY - SCALE;
+                end else 
+                    pacY = 480 + 16 * SCALE;
+             end
              
-             if (pacY < 480 + 16 * SCALE) begin
-                if (direction == 3) pacY = pacY + 2; // this will move pacman down
-             end else 
-                pacY = 0 - 16 * SCALE
-             frameUpdate = frameUpdate + 1;
-             */
+            if (direction == RIGHT) begin
+                if (pacX < 680 + 16 * SCALE) begin
+                    pacX = pacX + SCALE;
+                end else 
+                    pacX = 0 - 16 * SCALE;
+             end
+             
+             
+            if (direction == LEFT) begin
+                if (pacX > (0 - (16 * SCALE))) begin
+                    pacX = pacX - SCALE;
+                end else 
+                    pacX = 680 + 16 * SCALE;
+             end
+             
+            if (direction == DOWN) begin
+                if (pacY < 480 + 16 * SCALE) begin
+                    pacY = pacY + SCALE;
+                end else 
+                    pacY = 0 - 16 * SCALE;
+             end
+                      
         end
     end
     
