@@ -40,16 +40,28 @@ module Controller #(parameter SPRITE_SCALE = 2,
     wire CLK;
     Clock_Divider u_VGA_CLK(m_CLK, CLK);
     
+    //*** Use assert to compare the divided clock to the 25.175MHz required for 640x480 VGA @ 60 Hertz *** //
+        property check_period;
+            realtime cur_time;
+            realtime diff;
+            (1, cur_time = $realtime) // for 1st change, store the current time)
+            ##1 // wait for the next change
+            (1, diff = $realtime - cur_time) // Store the difference of the times
+            ##0 // Simultaneously perform next step (checking the distance)
+            diff >= 39ns && diff <= 41ns;     // 25.175 MHz should be ~40 ns, we are giving a grace of +/- 1ns
+        endproperty 
+    check_period_VGA: assert property (@(posedge CLK) check_period) $display ("Stable VGA Clock Achieved. Period: %f", diff);
+        else $warning ("Unstable VGA Clock Detected. Period: %f", diff);
 
 //******************************************
 /**** HANDLE BUTTON INPUTS ***/
     reg[3:0] cursor;
     reg[1:0] pac_Direction;
     
-    Button btn_up(SW_up, CLK, cursor[0]);
-    Button btn_left(SW_left, CLK, cursor[1]);
-    Button btn_right(SW_right, CLK, cursor[2]);
-    Button btn_down(SW_down, CLK, cursor[3]); 
+    Button btn_up(SW_up, m_CLK, cursor[0]);
+    Button btn_left(SW_left, m_CLK, cursor[1]);
+    Button btn_right(SW_right, m_CLK, cursor[2]);
+    Button btn_down(SW_down, m_CLK, cursor[3]); 
     
     // Direction chooser 
     always @(posedge CLK) begin
@@ -74,52 +86,7 @@ module Controller #(parameter SPRITE_SCALE = 2,
     Color_Chooser #(.SPRITE_SCALE(SPRITE_SCALE), .UP(UP), .DOWN(DOWN), .LEFT(LEFT), .RIGHT(RIGHT)) 
     color (x_VGA, y_VGA, x_Pac, y_Pac, pac_Direction, pac_Frame, VGA_RGB);
     
-    reg [3:0] frameCount; 
-    
-    
-    // This will handle movement + frame information 
-    always @(posedge CLK) begin 
-        if (y_VGA == 0 && x_VGA == 0) begin
-            if (frameCount == 1) begin
-            
-                // Update sprites 
-                if(pac_Frame == 3) pac_Frame <= 0;
-                else pac_Frame <= pac_Frame + 1;
-                
-                frameCount <= 0;
-            end
-            frameCount <= frameCount + 1; 
-            
-            
-            if (pac_Direction == UP) begin
-                if (y_Pac > 0 - 16 * SPRITE_SCALE) begin
-                    y_Pac <= y_Pac - SPRITE_SCALE;
-                end else 
-                    y_Pac <= 480 + 16 * SPRITE_SCALE;
-            end
-            if (pac_Direction == RIGHT) begin
-                if (x_Pac < 680 + 16 * SPRITE_SCALE) begin
-                    x_Pac <= x_Pac + SPRITE_SCALE;
-                end else 
-                    x_Pac <= 0 - 16 * SPRITE_SCALE;
-            end
-            if (pac_Direction == LEFT) begin
-                if (x_Pac > (0 - (16 * SPRITE_SCALE))) begin
-                    x_Pac <= x_Pac - SPRITE_SCALE;
-                end else 
-                    x_Pac <= 680 + 16 * SPRITE_SCALE;
-            end
-            if (pac_Direction == DOWN) begin
-                if (y_Pac < 480 + 16 * SPRITE_SCALE) begin
-                    y_Pac <= y_Pac + SPRITE_SCALE;
-                end else 
-                    y_Pac <= 0 - 16 * SPRITE_SCALE;
-             end
-             
-             debug <= x_Pac;
-        end
-    end
-    
-    
+    Pac_Move #(.SPRITE_SCALE(SPRITE_SCALE), .UP(UP),.DOWN(DOWN),.LEFT(LEFT),.RIGHT(RIGHT))
+    pac_move(CLK, x_VGA, y_VGA, pac_Direction, x_Pac, y_Pac, pac_Frame);
    
 endmodule

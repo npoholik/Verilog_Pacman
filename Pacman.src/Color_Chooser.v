@@ -45,7 +45,7 @@ Pac_Sprite pacman(pac_Col, pac_Row, pac_Frame, pac_RGB);
     	if(~(x_VGA > 639 || y_VGA > 479)) begin
         	
         	// Check for the bounds of pacman within the drawing of the screen (scaled up by n)
-        	// We will draw Pacman from the center of his x,y position 
+        	// We will draw Pacman out from the center of his x,y position 
         	if ((x_VGA > x_Pac - 8 * SPRITE_SCALE && x_VGA <= x_Pac + 8 * SPRITE_SCALE) 
         	     && (y_VGA > y_Pac - 8 * SPRITE_SCALE && y_VGA <= y_Pac + 8 * SPRITE_SCALE)) begin 
 
