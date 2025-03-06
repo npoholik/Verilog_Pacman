@@ -82,10 +82,16 @@ module Controller #(parameter SPRITE_SCALE = 2,
 /*** Track sprite position and RGB values ***/
     reg signed [10:0] x_Pac, y_Pac;
     reg [2:0] pac_Frame;
+    reg [5:0] grid_Type;
     
+    // Module for initializing map and obtaining GRID_TYPE for a giving 8x8 grid on map 
+    Map_Access map(x_VGA, y_VGA, grid_Type);
+    
+    // Module for actually drawing sprite information 
     Color_Chooser #(.SPRITE_SCALE(SPRITE_SCALE), .UP(UP), .DOWN(DOWN), .LEFT(LEFT), .RIGHT(RIGHT)) 
     color (x_VGA, y_VGA, x_Pac, y_Pac, pac_Direction, pac_Frame, VGA_RGB);
     
+    // Module for tracking movement of Pacman 
     Pac_Move #(.SPRITE_SCALE(SPRITE_SCALE), .UP(UP),.DOWN(DOWN),.LEFT(LEFT),.RIGHT(RIGHT))
     pac_move(CLK, x_VGA, y_VGA, pac_Direction, x_Pac, y_Pac, pac_Frame);
    
